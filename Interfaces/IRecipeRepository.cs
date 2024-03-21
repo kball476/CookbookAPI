@@ -14,7 +14,7 @@ namespace cookbook3.Interfaces
         bool RecipeExists(int recipeId);
         //
 
-        bool CreateRecipe(int ownerId, int categoryId, Recipe recipe);
+        bool CreateRecipe(int categoryId, Recipe recipe);
 
         bool UpdateRecipe(int ownerId, int categoryId, Recipe recipe);
         bool DeleteRecipe(Recipe recipe);

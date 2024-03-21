@@ -13,14 +13,16 @@ namespace cookbook3.Controllers
     {
         private readonly IRecipeRepository _recipeRepository;
         private readonly IReviewRepository _reviewRepository;
+        private readonly IOwnerRepository _ownerRepository;
         private readonly IMapper _mapper;
 
         public RecipeController(IRecipeRepository recipeRepository, 
-            IReviewRepository reviewRepository,
+            IReviewRepository reviewRepository, IOwnerRepository ownerRepository,
             IMapper mapper)
         {
             _recipeRepository = recipeRepository;
             _reviewRepository = reviewRepository;
+            _ownerRepository = ownerRepository;
             _mapper = mapper;
         }
 
@@ -93,7 +95,9 @@ namespace cookbook3.Controllers
 
             var recipeMap = _mapper.Map<Recipe>(recipeCreate);
 
-            if (!_recipeRepository.CreateRecipe(ownerId, catId, recipeMap))
+            recipeMap.Owner = _ownerRepository.GetOwner(ownerId);
+
+            if (!_recipeRepository.CreateRecipe( catId, recipeMap))
             {
                 ModelState.AddModelError("", "Something went wrong while saving");
                 return StatusCode(500, ModelState);

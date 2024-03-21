@@ -13,7 +13,7 @@ namespace cookbook3.Repository
             _context = context;
         }
 
-        public bool CreateRecipe(int ownerId, int categoryId, Recipe recipe)
+        public bool CreateRecipe(int categoryId, Recipe recipe)
         {
             //may need to change owner similar to recipe since not a one to many
    
