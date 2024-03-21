@@ -13,6 +13,33 @@ namespace cookbook3.Repository
             _context = context;
         }
 
+        public bool CreateRecipe(int ownerId, int categoryId, Recipe recipe)
+        {
+            //may need to change owner similar to recipe since not a one to many
+   
+            var recipeCategoryEntity = _context.Categories.Where(a => a.Id == categoryId).FirstOrDefault();
+
+            var recipeCategory = new RecipeCategory()
+            {
+                Recipe = recipe,
+                Category = recipeCategoryEntity,
+             };
+
+            _context.Add(recipeCategory);
+
+            _context.Add(recipe);
+
+            return Save();
+
+        }
+
+        public bool DeleteRecipe(Recipe recipe)
+        {
+            _context.Remove(recipe);
+            return Save();
+        }
+
+
         public Recipe GetRecipe(int id)
         {
             return _context.Recipes.Where(r => r.Id == id).FirstOrDefault();
@@ -40,6 +67,18 @@ namespace cookbook3.Repository
         public bool RecipeExists(int recipeId)
         {
             return _context.Recipes.Any(r => r.Id == recipeId);
+        }
+
+        public bool Save()
+        {
+            var saved = _context.SaveChanges();
+            return saved > 0 ? true : false;
+        }
+
+        public bool UpdateRecipe(int ownerId, int categoryId, Recipe recipe)
+        {
+            _context.Update(recipe);
+            return Save();
         }
     }
 }

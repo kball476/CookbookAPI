@@ -12,6 +12,14 @@ namespace cookbook3.Interfaces
 
         decimal GetRecipeRating(int recipeId);
         bool RecipeExists(int recipeId);
+        //
 
+        bool CreateRecipe(int ownerId, int categoryId, Recipe recipe);
+
+        bool UpdateRecipe(int ownerId, int categoryId, Recipe recipe);
+        bool DeleteRecipe(Recipe recipe);
+
+ 
+        bool Save();
     }
 }
