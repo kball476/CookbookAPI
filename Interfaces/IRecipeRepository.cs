@@ -10,6 +10,10 @@ namespace cookbook3.Interfaces
 
         Recipe GetRecipe(string name);
 
+        Recipe GetRecipeByReview(int reviewId);
+
+        ICollection<Recipe> GetRecipesByOwner(int ownerId);
+
         decimal GetRecipeRating(int recipeId);
         bool RecipeExists(int recipeId);
         //

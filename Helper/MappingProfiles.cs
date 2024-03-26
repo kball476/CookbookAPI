@@ -23,6 +23,8 @@ namespace cookbook3.Helper
 
             CreateMap<Reviewer, ReviewerDTO>();
             CreateMap<ReviewerDTO, Reviewer>();
+
+            
         }
     }
 }

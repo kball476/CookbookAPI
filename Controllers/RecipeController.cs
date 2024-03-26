@@ -71,6 +71,45 @@ namespace cookbook3.Controllers
             return Ok(rating);
         }
 
+        
+        [HttpGet("{reviewId}/recipe")]
+        [ProducesResponseType(200, Type = typeof(Recipe))]
+        [ProducesResponseType(400)]
+        public IActionResult GetRecipeByReview(int reviewId)
+        {
+            if (!_reviewRepository.ReviewExists(reviewId))
+            {
+                return NotFound();
+            }
+
+            var recipe = _mapper.Map<RecipeDTO>(
+             _recipeRepository.GetRecipeByReview(reviewId));
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return Ok(recipe);
+        }
+
+        [HttpGet("{ownerId}/recipes")]
+        [ProducesResponseType(200, Type = typeof(Recipe))]
+        [ProducesResponseType(400)]
+        public IActionResult GetRecipesByOwner(int ownerId)
+        {
+            if (!_ownerRepository.OwnerExists(ownerId))
+            {
+                return NotFound();
+            }
+
+            var recipe = _mapper.Map<List<RecipeDTO>>(
+             _recipeRepository.GetRecipesByOwner(ownerId));
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return Ok(recipe);
+        }
+
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]

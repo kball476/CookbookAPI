@@ -7,9 +7,11 @@ namespace cookbook3.Interfaces
         ICollection<Owner> GetOwners();
 
         Owner GetOwner(int ownerId);
-  //      ICollection<Owner> GetOwnerOfRecipe(int recipeId);
+        //      ICollection<Owner> GetOwnerOfRecipe(int recipeId);
 
-  //      ICollection<Recipe> GetRecipeByOwner(int  ownerId);
+        //      ICollection<Recipe> GetRecipeByOwner(int  ownerId);
+
+        Owner GetOwnerByRecipe(int recipeId);
 
         bool OwnerExists(int ownerId);
 

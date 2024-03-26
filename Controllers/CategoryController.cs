@@ -12,11 +12,14 @@ namespace cookbook3.Controllers
     public class CategoryController : Controller
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IRecipeRepository _recipeRepository;
         private readonly IMapper _mapper;
 
-        public CategoryController(ICategoryRepository categoryRepository, IMapper mapper)
+        public CategoryController(ICategoryRepository categoryRepository,
+            IRecipeRepository recipeRepository, IMapper mapper)
         {
             _categoryRepository = categoryRepository;
+            _recipeRepository = recipeRepository;
             _mapper = mapper;
         }
 
@@ -60,6 +63,25 @@ namespace cookbook3.Controllers
                 return BadRequest();
 
             return Ok(recipes);
+        }
+
+        [HttpGet("{recipeId}/category")]
+        [ProducesResponseType(200, Type = typeof(Category))]
+        [ProducesResponseType(400)]
+        public IActionResult GetCategoryByRecipe(int recipeId)
+        {
+            if (!_recipeRepository.RecipeExists(recipeId))
+            {
+                return NotFound();
+            }
+
+            var category = _mapper.Map<CategoryDTO>(
+             _categoryRepository.GetCategoryByRecipe(recipeId));
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return Ok(category);
         }
 
 

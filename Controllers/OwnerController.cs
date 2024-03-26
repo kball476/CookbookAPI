@@ -12,10 +12,13 @@ namespace cookbook3.Controllers
     public class OwnerController : Controller
     {
         private readonly IOwnerRepository _ownerRepository;
+        private readonly IRecipeRepository _recipeRepository;
         private readonly IMapper _mapper;
-        public OwnerController(IOwnerRepository ownerRepository, IMapper mapper)
+        public OwnerController(IOwnerRepository ownerRepository, IRecipeRepository recipeRepository,
+            IMapper mapper)
         {
             _ownerRepository = ownerRepository;
+            _recipeRepository = recipeRepository;
             _mapper = mapper;
         }
 
@@ -47,21 +50,24 @@ namespace cookbook3.Controllers
             return Ok(owner);
         }
 
-        //    [HttpGet("{ownerId}/recipe")]
-        //  [ProducesResponseType(200, Type = typeof(Owner))]
-        //    [ProducesResponseType(400)]
-        //    public IActionResult GetRecipeByOwner(int ownerId)
-        //        {
-        //         if(!_ownerRepository.OwnerExists(ownerId))
-        //       {
-        //         return NotFound();
-        //     }
-        //    var owner = _mapper.Map<List<RecipeDTO>>(
-        //      _ownerRepository.GetRecipeByOwner(ownerId));
-        //
-        //          if (!ModelState.IsValid)
-        //            return Ok(owner);
-        //  }
+         [HttpGet("{recipeId}/owner")]
+         [ProducesResponseType(200, Type = typeof(Owner))]
+         [ProducesResponseType(400)]
+         public IActionResult GetOwnerByRecipe(int recipeId)
+         {
+             if(!_recipeRepository.RecipeExists(recipeId))
+               {
+                 return NotFound();
+               }
+
+            var owner = _mapper.Map<OwnerDTO>(
+             _ownerRepository.GetOwnerByRecipe(recipeId));
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+               return Ok(owner);
+         }
 
 
         [HttpPost]

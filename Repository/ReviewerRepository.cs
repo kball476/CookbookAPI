@@ -40,6 +40,12 @@ namespace cookbook3.Repository
             return _context.Reviewers.ToList();
         }
 
+        //public ICollection<Reviewer> GetReviewersByRecipe(int recipeId)
+        //{
+        //    return _context.Recipes.Where(r => r.Id == recipeId).Select(o => o.Reviewers).FirstOrDefault();
+        //}
+        // cant do this because no reviewers in recipe model, is in reviews.
+
         public ICollection<Review> GetReviewsByReviewer(int reviewerId)
         {
             return _context.Reviews.Where(r => r.Reviewer.Id == reviewerId).ToList();

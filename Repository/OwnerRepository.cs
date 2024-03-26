@@ -30,10 +30,12 @@ namespace cookbook3.Repository
             return _context.Owners.Where(o => o.Id == ownerId).FirstOrDefault();
         }
 
- //       public ICollection<Owner> GetOwnerOfRecipe(int recipeId)
-   //     {
-     //       return _context.Recipes.Where(p => p.Recipe.Id == recipeId).Select(o => o.Owner).ToList();
-       // }
+        public Owner GetOwnerByRecipe(int recipeId)
+        {
+            return _context.Recipes.Where(p => p.Id == recipeId).Select(o => o.Owner).FirstOrDefault();
+        }
+
+       
 
         public ICollection<Owner> GetOwners()
         {

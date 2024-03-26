@@ -8,6 +8,8 @@ namespace cookbook3.Interfaces
 
         Reviewer GetReviewer(int reviewerId);
 
+        //ICollection<Reviewer> GetReviewersByRecipe(int recipeId);
+
         ICollection<Review> GetReviewsByReviewer(int reviewerId);
 
         bool ReviewerExists(int reviewerId);

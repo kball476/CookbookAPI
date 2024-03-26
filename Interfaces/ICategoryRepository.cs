@@ -8,6 +8,8 @@ namespace cookbook3.Interfaces
         ICollection<Category> GetCategories();
         Category GetCategory(int id);
 
+        Category GetCategoryByRecipe(int recipeId);
+
         ICollection<Recipe> GetRecipeByCategory(int categoryId);
 
         bool CategoryExists(int id);

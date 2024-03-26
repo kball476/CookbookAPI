@@ -40,6 +40,11 @@ namespace cookbook3.Repository
             return _context.Categories.Where(e => e.Id == id).FirstOrDefault();
         }
 
+        public Category GetCategoryByRecipe(int recipeId)
+        {
+            return _context.RecipeCategories.Where(p => p.RecipeId == recipeId).Select(o => o.Category).FirstOrDefault();
+        }
+
         public ICollection<Recipe> GetRecipeByCategory(int categoryId)
         {
             return _context.RecipeCategories.Where(e => e.CategoryId == categoryId).Select(c => c.Recipe).ToList();

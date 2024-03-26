@@ -49,6 +49,12 @@ namespace cookbook3.Repository
         {
             return _context.Recipes.Where(r => r.Name == name).FirstOrDefault();
         }
+        //for later installation
+
+        public Recipe GetRecipeByReview(int reviewId)
+        {
+            return _context.Reviews.Where(p => p.Id == reviewId).Select(o => o.Recipe).FirstOrDefault();
+        }
 
         public decimal GetRecipeRating(int recipeId)
         {
@@ -63,6 +69,7 @@ namespace cookbook3.Repository
         {
             return _context.Recipes.OrderBy(p => p.Id).ToList();
         }
+
 
         public bool RecipeExists(int recipeId)
         {
@@ -79,6 +86,11 @@ namespace cookbook3.Repository
         {
             _context.Update(recipe);
             return Save();
+        }
+
+        ICollection<Recipe> IRecipeRepository.GetRecipesByOwner(int ownerId)
+        {
+            return _context.Owners.Where(o => o.Id == ownerId).Select(o => o.Recipes).FirstOrDefault();
         }
     }
 }
