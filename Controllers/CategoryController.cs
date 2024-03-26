@@ -27,12 +27,20 @@ namespace cookbook3.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Category>))]
         public IActionResult GetCategories()
         {
-            var categories = _mapper.Map<List<CategoryDTO>>(_categoryRepository.GetCategories());
+            try
+            {
+                var categories = _mapper.Map<List<CategoryDTO>>(_categoryRepository.GetCategories());
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(categories);
+                return Ok(categories);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
 
@@ -41,15 +49,22 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetCategory(int categoryId)
         {
-            if (!_categoryRepository.CategoryExists(categoryId))
-                return NotFound();
+            try
+            {
+                if (!_categoryRepository.CategoryExists(categoryId))
+                    return NotFound();
 
-            var category = _mapper.Map<CategoryDTO>(_categoryRepository.GetCategory(categoryId));
+                var category = _mapper.Map<CategoryDTO>(_categoryRepository.GetCategory(categoryId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(category);
+                return Ok(category);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("recipe/{categoryId}")]
@@ -57,12 +72,19 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetRecipeByCategoryId(int categoryId)
         {
-            var recipes = _mapper.Map<List<RecipeDTO>>(
-                _categoryRepository.GetRecipeByCategory(categoryId));
-            if (!ModelState.IsValid)
-                return BadRequest();
+            try
+            {
+                var recipes = _mapper.Map<List<RecipeDTO>>(
+                    _categoryRepository.GetRecipeByCategory(categoryId));
+                if (!ModelState.IsValid)
+                    return BadRequest();
 
-            return Ok(recipes);
+                return Ok(recipes);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{recipeId}/category")]
@@ -70,18 +92,25 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetCategoryByRecipe(int recipeId)
         {
-            if (!_recipeRepository.RecipeExists(recipeId))
+            try
             {
-                return NotFound();
+                if (!_recipeRepository.RecipeExists(recipeId))
+                {
+                    return NotFound();
+                }
+
+                var category = _mapper.Map<CategoryDTO>(
+                 _categoryRepository.GetCategoryByRecipe(recipeId));
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                return Ok(category);
             }
-
-            var category = _mapper.Map<CategoryDTO>(
-             _categoryRepository.GetCategoryByRecipe(recipeId));
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            return Ok(category);
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
 
@@ -90,33 +119,39 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateCategory([FromBody] CategoryDTO categoryCreate)
         {
-            if (categoryCreate == null)
-                return BadRequest(ModelState);
-
-            var category = _categoryRepository.GetCategories()
-                .Where(c => c.Type.Trim().ToUpper() == categoryCreate.Type.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if(category != null)
+            try
             {
-                ModelState.AddModelError("", "Category already exists");
-                return StatusCode(422, ModelState);
+                if (categoryCreate == null)
+                    return BadRequest(ModelState);
 
-            }
+                var category = _categoryRepository.GetCategories()
+                    .Where(c => c.Type.Trim().ToUpper() == categoryCreate.Type.TrimEnd().ToUpper())
+                    .FirstOrDefault();
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (category != null)
+                {
+                    ModelState.AddModelError("", "Category already exists");
+                    return StatusCode(422, ModelState);
 
-            var categoryMap = _mapper.Map<Category>(categoryCreate);
+                }
 
-            if(!_categoryRepository.CreateCategory(categoryMap))
-            {
-                ModelState.AddModelError("", "Something went wrong while saving");
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var categoryMap = _mapper.Map<Category>(categoryCreate);
+
+                if (!_categoryRepository.CreateCategory(categoryMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
                     return StatusCode(500, ModelState);
-            }
+                }
 
-            return Ok("Successfully created");
-                
+                return Ok("Successfully created");
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("{categoryId}")]
@@ -125,26 +160,34 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateCategory (int categoryId, [FromBody]CategoryDTO updatedCategory)
         {
-            if (updatedCategory == null)
-                return BadRequest(ModelState);
-
-            if (categoryId != updatedCategory.Id)
-                return BadRequest(ModelState);
-
-            if (!_categoryRepository.CategoryExists(categoryId))
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var categoryMap = _mapper.Map<Category>(updatedCategory);
-
-            if(!_categoryRepository.UpdateCategory(categoryMap))
+            try
             {
-                ModelState.AddModelError("", "Something errored updating category");
-                return StatusCode(500, ModelState);
+                if (updatedCategory == null)
+                    return BadRequest(ModelState);
+
+                if (categoryId != updatedCategory.Id)
+                    return BadRequest(ModelState);
+
+                if (!_categoryRepository.CategoryExists(categoryId))
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest();
+
+                var categoryMap = _mapper.Map<Category>(updatedCategory);
+
+                if (!_categoryRepository.UpdateCategory(categoryMap))
+                {
+                    ModelState.AddModelError("", "Something errored updating category");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent();
             }
-            return NoContent();
+
+            catch 
+            { 
+                return StatusCode(500); 
+            }
         }
 
         [HttpDelete("{categoryId}")]
@@ -153,22 +196,29 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteCategory(int categoryId)
         {
-            if(!_categoryRepository.CategoryExists(categoryId))
+            try
             {
-                return NotFound();
+                if (!_categoryRepository.CategoryExists(categoryId))
+                {
+                    return NotFound();
+                }
+
+                var categoryToDelete = _categoryRepository.GetCategory(categoryId);
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!_categoryRepository.DeleteCategory(categoryToDelete))
+                {
+                    ModelState.AddModelError("", "Something went wrong deleting category");
+                }
+
+                return NoContent();
             }
-
-            var categoryToDelete = _categoryRepository.GetCategory(categoryId);
-
-            if(!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if(!_categoryRepository.DeleteCategory(categoryToDelete))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong deleting category");
+                return StatusCode(500);
             }
-
-            return NoContent();
 
         }
 

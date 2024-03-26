@@ -26,12 +26,20 @@ namespace cookbook3.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Owner>))]
         public IActionResult GetOwners()
         {
-            var owners = _mapper.Map<List<OwnerDTO>>(_ownerRepository.GetOwners());
+            try
+            {
+                var owners = _mapper.Map<List<OwnerDTO>>(_ownerRepository.GetOwners());
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(owners);
+                return Ok(owners);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{ownerId}")]
@@ -39,15 +47,23 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetOwner(int ownerId)
         {
-            if (!_ownerRepository.OwnerExists(ownerId))
-                return NotFound();
+            try
+            {
+                if (!_ownerRepository.OwnerExists(ownerId))
+                    return NotFound();
 
-            var owner = _mapper.Map<OwnerDTO>(_ownerRepository.GetOwner(ownerId));
+                var owner = _mapper.Map<OwnerDTO>(_ownerRepository.GetOwner(ownerId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(owner);
+                return Ok(owner);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
          [HttpGet("{recipeId}/owner")]
@@ -55,19 +71,27 @@ namespace cookbook3.Controllers
          [ProducesResponseType(400)]
          public IActionResult GetOwnerByRecipe(int recipeId)
          {
-             if(!_recipeRepository.RecipeExists(recipeId))
-               {
-                 return NotFound();
-               }
+            try
+            {
+                if (!_recipeRepository.RecipeExists(recipeId))
+                {
+                    return NotFound();
+                }
 
-            var owner = _mapper.Map<OwnerDTO>(
-             _ownerRepository.GetOwnerByRecipe(recipeId));
+                var owner = _mapper.Map<OwnerDTO>(
+                 _ownerRepository.GetOwnerByRecipe(recipeId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-               return Ok(owner);
-         }
+                return Ok(owner);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
 
 
         [HttpPost]
@@ -75,33 +99,40 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateOwner([FromBody] OwnerDTO ownerCreate)
         {
-            if (ownerCreate == null)
-                return BadRequest(ModelState);
-
-            var owners = _ownerRepository.GetOwners()
-                .Where(c => c.Name.Trim().ToUpper() == ownerCreate.Name.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if (owners != null)
+            try
             {
-                ModelState.AddModelError("", "Owner already exists");
-                return StatusCode(422, ModelState);
+                if (ownerCreate == null)
+                    return BadRequest(ModelState);
 
+                var owners = _ownerRepository.GetOwners()
+                    .Where(c => c.Name.Trim().ToUpper() == ownerCreate.Name.TrimEnd().ToUpper())
+                    .FirstOrDefault();
+
+                if (owners != null)
+                {
+                    ModelState.AddModelError("", "Owner already exists");
+                    return StatusCode(422, ModelState);
+
+                }
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var ownerMap = _mapper.Map<Owner>(ownerCreate);
+
+                if (!_ownerRepository.CreateOwner(ownerMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
+                    return StatusCode(500, ModelState);
+                }
+
+                return Ok("Successfully created");
             }
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var ownerMap = _mapper.Map<Owner>(ownerCreate);
-
-            if (!_ownerRepository.CreateOwner(ownerMap))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
+                return StatusCode(500);
             }
-
-            return Ok("Successfully created");
-
         }
 
 
@@ -112,26 +143,34 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateOwner(int ownerId, [FromBody] OwnerDTO updatedOwner)
         {
-            if (updatedOwner == null)
-                return BadRequest(ModelState);
-
-            if (ownerId != updatedOwner.Id)
-                return BadRequest(ModelState);
-
-            if (!_ownerRepository.OwnerExists(ownerId))
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var ownerMap = _mapper.Map<Owner>(updatedOwner);
-
-            if (!_ownerRepository.UpdateOwner(ownerMap))
+            try
             {
-                ModelState.AddModelError("", "Something errored updating owner");
-                return StatusCode(500, ModelState);
+                if (updatedOwner == null)
+                    return BadRequest(ModelState);
+
+                if (ownerId != updatedOwner.Id)
+                    return BadRequest(ModelState);
+
+                if (!_ownerRepository.OwnerExists(ownerId))
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest();
+
+                var ownerMap = _mapper.Map<Owner>(updatedOwner);
+
+                if (!_ownerRepository.UpdateOwner(ownerMap))
+                {
+                    ModelState.AddModelError("", "Something errored updating owner");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent();
             }
-            return NoContent();
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpDelete("{ownerId}")]
@@ -140,23 +179,30 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteOwner(int ownerId)
         {
-            if (!_ownerRepository.OwnerExists(ownerId))
+            try
             {
-                return NotFound();
+                if (!_ownerRepository.OwnerExists(ownerId))
+                {
+                    return NotFound();
+                }
+
+                var ownerToDelete = _ownerRepository.GetOwner(ownerId);
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!_ownerRepository.DeleteOwner(ownerToDelete))
+                {
+                    ModelState.AddModelError("", "Something went wrong deleting owner");
+                }
+
+                return NoContent();
             }
 
-            var ownerToDelete = _ownerRepository.GetOwner(ownerId);
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!_ownerRepository.DeleteOwner(ownerToDelete))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong deleting owner");
+                return StatusCode(500);
             }
-
-            return NoContent();
-
         }
 
     }

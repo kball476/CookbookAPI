@@ -3,6 +3,14 @@ using cookbook3.Data;
 using cookbook3.Interfaces;
 using cookbook3.Models;
 
+// Usage of the Interface Segregation Principle, from SOLID, is evident based on 
+// all methods from the interface being incoorporated, given substance (i.e. NO
+// "throw new notimplementedexception()"), and utilized in our ReviewController.
+
+// The Single Responsibility Principle can also be seen in each method, as they 
+// are all responsible for one purpose. For example, updateReview() replaces a
+// current review with the new one obtained from the Put request in data context.
+
 namespace cookbook3.Repository
 {
     public class ReviewRepository : IReviewRepository

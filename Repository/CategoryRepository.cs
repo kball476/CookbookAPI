@@ -2,6 +2,15 @@
 using cookbook3.Interfaces;
 using cookbook3.Models;
 
+
+// Usage of the Interface Segregation Principle, from SOLID, is evident based on 
+// all methods from the interface being incoorporated, given substance (i.e. NO
+// "throw new notimplementedexception()"), and utilized in our CategoryController.
+
+// The Single Responsibility Principle can also be seen in each method, as they 
+// are all responsible for one purpose. For example, the CategoryExists() only
+// returns a true or false based on if any categories are found in the data context.
+
 namespace cookbook3.Repository
 {
     public class CategoryRepository : ICategoryRepository

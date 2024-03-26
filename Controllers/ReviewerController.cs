@@ -25,12 +25,19 @@ namespace cookbook3.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Reviewer>))]
         public IActionResult GetReviewers()
         {
-            var reviewers = _mapper.Map<List<ReviewerDTO>>(_reviewerRepository.GetReviewers());
+            try
+            {
+                var reviewers = _mapper.Map<List<ReviewerDTO>>(_reviewerRepository.GetReviewers());
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(reviewers);
+                return Ok(reviewers);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{reviewerId}")]
@@ -38,30 +45,44 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
-                return NotFound();
+            try
+            {
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                    return NotFound();
 
-            var reviewer = _mapper.Map<ReviewerDTO>(_reviewerRepository.GetReviewer(reviewerId));
+                var reviewer = _mapper.Map<ReviewerDTO>(_reviewerRepository.GetReviewer(reviewerId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(reviewer);
+                return Ok(reviewer);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{reviewerId}/reviews")]
         public IActionResult GetReviewsByReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
-                return NotFound();
+            try
+            {
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                    return NotFound();
 
-            var reviews = _mapper.Map<List<ReviewDTO>>(
-                _reviewerRepository.GetReviewsByReviewer(reviewerId));
+                var reviews = _mapper.Map<List<ReviewDTO>>(
+                    _reviewerRepository.GetReviewsByReviewer(reviewerId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(reviews);
+                return Ok(reviews);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPost]
@@ -69,32 +90,39 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateReviewer([FromBody] ReviewerDTO reviewerCreate)
         {
-            if (reviewerCreate == null)
-                return BadRequest(ModelState);
-
-            var reviewer = _reviewerRepository.GetReviewers()
-                .Where(c => c.Name.Trim().ToUpper() == reviewerCreate.Name.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if (reviewer != null)
+            try
             {
-                ModelState.AddModelError("", "Reviewer already exists");
-                return StatusCode(422, ModelState);
+                if (reviewerCreate == null)
+                    return BadRequest(ModelState);
 
+                var reviewer = _reviewerRepository.GetReviewers()
+                    .Where(c => c.Name.Trim().ToUpper() == reviewerCreate.Name.TrimEnd().ToUpper())
+                    .FirstOrDefault();
+
+                if (reviewer != null)
+                {
+                    ModelState.AddModelError("", "Reviewer already exists");
+                    return StatusCode(422, ModelState);
+
+                }
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var reviewerMap = _mapper.Map<Reviewer>(reviewerCreate);
+
+                if (!_reviewerRepository.CreateReviewer(reviewerMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
+                    return StatusCode(500, ModelState);
+                }
+
+                return Ok("Successfully created");
             }
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var reviewerMap = _mapper.Map<Reviewer>(reviewerCreate);
-
-            if (!_reviewerRepository.CreateReviewer(reviewerMap))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
+                return StatusCode(500);
             }
-
-            return Ok("Successfully created");
 
         }
 
@@ -105,26 +133,33 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateReviewer(int reviewerId, [FromBody] ReviewerDTO updatedReviewer)
         {
-            if (updatedReviewer == null)
-                return BadRequest(ModelState);
-
-            if (reviewerId != updatedReviewer.Id)
-                return BadRequest(ModelState);
-
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var reviewerMap = _mapper.Map<Reviewer>(updatedReviewer);
-
-            if (!_reviewerRepository.UpdateReviewer(reviewerMap))
+            try
             {
-                ModelState.AddModelError("", "Something errored updating reviewer");
-                return StatusCode(500, ModelState);
+                if (updatedReviewer == null)
+                    return BadRequest(ModelState);
+
+                if (reviewerId != updatedReviewer.Id)
+                    return BadRequest(ModelState);
+
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest();
+
+                var reviewerMap = _mapper.Map<Reviewer>(updatedReviewer);
+
+                if (!_reviewerRepository.UpdateReviewer(reviewerMap))
+                {
+                    ModelState.AddModelError("", "Something errored updating reviewer");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpDelete("{reviewerId}")]
@@ -133,23 +168,29 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteReviewer(int reviewerId)
         {
-            if (!_reviewerRepository.ReviewerExists(reviewerId))
+            try
             {
-                return NotFound();
+                if (!_reviewerRepository.ReviewerExists(reviewerId))
+                {
+                    return NotFound();
+                }
+
+                var reviewerToDelete = _reviewerRepository.GetReviewer(reviewerId);
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!_reviewerRepository.DeleteReviewer(reviewerToDelete))
+                {
+                    ModelState.AddModelError("", "Something went wrong deleting reviewer");
+                }
+
+                return NoContent();
             }
-
-            var reviewerToDelete = _reviewerRepository.GetReviewer(reviewerId);
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!_reviewerRepository.DeleteReviewer(reviewerToDelete))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong deleting reviewer");
+                return StatusCode(500);
             }
-
-            return NoContent();
-
         }
     }
 }

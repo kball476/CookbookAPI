@@ -2,6 +2,14 @@
 using cookbook3.Interfaces;
 using cookbook3.Models;
 
+// Usage of the Interface Segregation Principle, from SOLID, is evident based on 
+// all methods from the interface being incoorporated, given substance (i.e. NO
+// "throw new notimplementedexception()"), and utilized in our RecipeController.
+
+// The Single Responsibility Principle can also be seen in each method, as they 
+// are all responsible for one purpose. For example, DeleteRecipe() removes a 
+// selected recipe item from data context.
+
 namespace cookbook3.Repository
 {
     public class RecipeRepository : IRecipeRepository
@@ -23,7 +31,7 @@ namespace cookbook3.Repository
             {
                 Recipe = recipe,
                 Category = recipeCategoryEntity,
-             };
+            };
 
             _context.Add(recipeCategory);
 

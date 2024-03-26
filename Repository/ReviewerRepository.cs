@@ -4,6 +4,14 @@ using cookbook3.Interfaces;
 using cookbook3.Models;
 using Microsoft.EntityFrameworkCore;
 
+// Usage of the Interface Segregation Principle, from SOLID, is evident based on 
+// all methods from the interface being incoorporated, given substance (i.e. NO
+// "throw new notimplementedexception()"), and utilized in our ReviewerController.
+
+// The Single Responsibility Principle can also be seen in each method, as they 
+// are all responsible for one purpose. For example, GetReviewer() retrieves a 
+// single reviewer from the list of reviewers in data context.
+
 namespace cookbook3.Repository
 {
     public class ReviewerRepository : IReviewerRepository

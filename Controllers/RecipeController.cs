@@ -30,12 +30,20 @@ namespace cookbook3.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Recipe>))]
         public IActionResult GetRecipes()
         {
-            var recipes = _mapper.Map<List<RecipeDTO>>(_recipeRepository.GetRecipes());
+            try
+            {
+                var recipes = _mapper.Map<List<RecipeDTO>>(_recipeRepository.GetRecipes());
 
-            if(!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(recipes);
+                return Ok(recipes);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{recipeId}")]
@@ -43,32 +51,49 @@ namespace cookbook3.Controllers
         [ProducesResponseType (400)]
         public IActionResult GetRecipe(int recipeId)
         {
-            if (!_recipeRepository.RecipeExists(recipeId))
-                return NotFound();
+            try
+            {
+                if (!_recipeRepository.RecipeExists(recipeId))
+                    return NotFound();
 
-            var recipe = _mapper.Map<RecipeDTO>(_recipeRepository.GetRecipe(recipeId));
+                var recipe = _mapper.Map<RecipeDTO>(_recipeRepository.GetRecipe(recipeId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(recipe);
+                return Ok(recipe);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
+        
         [HttpGet("{recipeId}/rating")]
         [ProducesResponseType(200, Type = typeof(decimal))]
         [ProducesResponseType(400)]
 
         public IActionResult GetRecipeRating(int recipeId)
         {
-            if (!_recipeRepository.RecipeExists(recipeId))
-                return NotFound();
+            try
+            {
+                if (!_recipeRepository.RecipeExists(recipeId))
+                    return NotFound();
 
-            var rating = _recipeRepository.GetRecipeRating(recipeId);
+                var rating = _recipeRepository.GetRecipeRating(recipeId);
 
-            if (!ModelState.IsValid)
-                return BadRequest();
+                if (!ModelState.IsValid)
+                    return BadRequest();
 
-            return Ok(rating);
+                return Ok(rating);
+            }
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         
@@ -77,18 +102,26 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetRecipeByReview(int reviewId)
         {
-            if (!_reviewRepository.ReviewExists(reviewId))
+            try
             {
-                return NotFound();
+                if (!_reviewRepository.ReviewExists(reviewId))
+                {
+                    return NotFound();
+                }
+
+                var recipe = _mapper.Map<RecipeDTO>(
+                 _recipeRepository.GetRecipeByReview(reviewId));
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                return Ok(recipe);
             }
 
-            var recipe = _mapper.Map<RecipeDTO>(
-             _recipeRepository.GetRecipeByReview(reviewId));
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            return Ok(recipe);
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{ownerId}/recipes")]
@@ -96,54 +129,69 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetRecipesByOwner(int ownerId)
         {
-            if (!_ownerRepository.OwnerExists(ownerId))
+            try
             {
-                return NotFound();
+                if (!_ownerRepository.OwnerExists(ownerId))
+                {
+                    return NotFound();
+                }
+
+                var recipe = _mapper.Map<List<RecipeDTO>>(
+                 _recipeRepository.GetRecipesByOwner(ownerId));
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                return Ok(recipe);
             }
 
-            var recipe = _mapper.Map<List<RecipeDTO>>(
-             _recipeRepository.GetRecipesByOwner(ownerId));
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            return Ok(recipe);
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult CreateRecipe([FromQuery] int ownerId, [FromQuery] int catId, [FromBody] RecipeDTO recipeCreate)
+        public IActionResult CreateRecipe([FromQuery] int ownerId, [FromQuery] int categoryId, [FromBody] RecipeDTO recipeCreate)
         {
-            if (recipeCreate == null)
-                return BadRequest(ModelState);
-
-            var recipes = _recipeRepository.GetRecipes()
-                .Where(c => c.Name.Trim().ToUpper() == recipeCreate.Name.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if (recipes != null)
+            try
             {
-                ModelState.AddModelError("", "Recipe already exists");
-                return StatusCode(422, ModelState);
+                if (recipeCreate == null)
+                    return BadRequest(ModelState);
 
+                var recipes = _recipeRepository.GetRecipes()
+                    .Where(c => c.Name.Trim().ToUpper() == recipeCreate.Name.TrimEnd().ToUpper())
+                    .FirstOrDefault();
+
+                if (recipes != null)
+                {
+                    ModelState.AddModelError("", "Recipe already exists");
+                    return StatusCode(422, ModelState);
+
+                }
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var recipeMap = _mapper.Map<Recipe>(recipeCreate);
+
+                recipeMap.Owner = _ownerRepository.GetOwner(ownerId);
+
+                if (!_recipeRepository.CreateRecipe(categoryId, recipeMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
+                    return StatusCode(500, ModelState);
+                }
+
+                return Ok("Successfully created");
             }
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var recipeMap = _mapper.Map<Recipe>(recipeCreate);
-
-            recipeMap.Owner = _ownerRepository.GetOwner(ownerId);
-
-            if (!_recipeRepository.CreateRecipe( catId, recipeMap))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
+                return StatusCode(500);
             }
-
-            return Ok("Successfully created");
-
         }
 
         [HttpPut("{recipeId}")]
@@ -153,26 +201,34 @@ namespace cookbook3.Controllers
         public IActionResult UpdateRecipe(int recipeId, [FromQuery] int ownerId, [FromQuery]
             int categoryId, [FromBody] RecipeDTO updatedRecipe)
         {
-            if (updatedRecipe == null)
-                return BadRequest(ModelState);
-
-            if (recipeId != updatedRecipe.Id)
-                return BadRequest(ModelState);
-
-            if (!_recipeRepository.RecipeExists(recipeId))
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var recipeMap = _mapper.Map<Recipe>(updatedRecipe);
-
-            if (!_recipeRepository.UpdateRecipe(ownerId, categoryId, recipeMap))
+            try
             {
-                ModelState.AddModelError("", "Something errored updating recipe");
-                return StatusCode(500, ModelState);
+                if (updatedRecipe == null)
+                    return BadRequest(ModelState);
+
+                if (recipeId != updatedRecipe.Id)
+                    return BadRequest(ModelState);
+
+                if (!_recipeRepository.RecipeExists(recipeId))
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest();
+
+                var recipeMap = _mapper.Map<Recipe>(updatedRecipe);
+
+                if (!_recipeRepository.UpdateRecipe(ownerId, categoryId, recipeMap))
+                {
+                    ModelState.AddModelError("", "Something errored updating recipe");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent();
             }
-            return NoContent();
+
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpDelete("{recipeId}")]
@@ -181,28 +237,35 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteRecipe(int recipeId)
         {
-            if (!_recipeRepository.RecipeExists(recipeId))
+            try
             {
-                return NotFound();
+                if (!_recipeRepository.RecipeExists(recipeId))
+                {
+                    return NotFound();
+                }
+
+                var reviewsToDelete = _reviewRepository.GetReviewsOfRecipe(recipeId);
+                var recipeToDelete = _recipeRepository.GetRecipe(recipeId);
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!_reviewRepository.DeleteReviews(reviewsToDelete.ToList()))
+                {
+                    ModelState.AddModelError("", "Something went wrong when deleting reviews");
+                }
+
+                if (!_recipeRepository.DeleteRecipe(recipeToDelete))
+                {
+                    ModelState.AddModelError("", "Something went wrong deleting recipe");
+                }
+                return NoContent();
             }
 
-            var reviewsToDelete = _reviewRepository.GetReviewsOfRecipe(recipeId);
-            var recipeToDelete = _recipeRepository.GetRecipe(recipeId);
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!_reviewRepository.DeleteReviews(reviewsToDelete.ToList()))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong when deleting reviews");
+                return StatusCode(500);
             }
-
-            if (!_recipeRepository.DeleteRecipe(recipeToDelete))
-            {
-                ModelState.AddModelError("", "Something went wrong deleting recipe");
-            }
-            return NoContent();
-
         }
     }
 }

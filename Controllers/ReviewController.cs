@@ -29,12 +29,19 @@ namespace cookbook3.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Review>))]
         public IActionResult GetRecipes()
         {
-            var reviews = _mapper.Map<List<ReviewDTO>>(_reviewRepository.GetReviews());
+            try
+            {
+                var reviews = _mapper.Map<List<ReviewDTO>>(_reviewRepository.GetReviews());
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(reviews);
+                return Ok(reviews);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("{reviewId}")]
@@ -42,15 +49,22 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetReview(int reviewId)
         {
-            if (!_reviewRepository.ReviewExists(reviewId))
-                return NotFound();
+            try
+            {
+                if (!_reviewRepository.ReviewExists(reviewId))
+                    return NotFound();
 
-            var review = _mapper.Map<ReviewDTO>(_reviewRepository.GetReview(reviewId));
+                var review = _mapper.Map<ReviewDTO>(_reviewRepository.GetReview(reviewId));
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            return Ok(review);
+                return Ok(review);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpGet("recipe/{recipeId}")]
@@ -58,12 +72,19 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetReviewsForRecipe(int recipeId)
         {
-            var reviews = _mapper.Map<List<ReviewDTO>>(_reviewRepository.GetReviewsOfRecipe(recipeId));
+            try
+            {
+                var reviews = _mapper.Map<List<ReviewDTO>>(_reviewRepository.GetReviewsOfRecipe(recipeId));
 
-            if (!ModelState.IsValid)
-                return BadRequest();
+                if (!ModelState.IsValid)
+                    return BadRequest();
 
-            return Ok(reviews);
+                return Ok(reviews);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpPost]
@@ -71,37 +92,44 @@ namespace cookbook3.Controllers
         [ProducesResponseType(400)]
         public IActionResult CreateReview([FromQuery] int reviewerId, [FromQuery] int recipeId, [FromBody] ReviewDTO reviewCreate)
         {
-            if (reviewCreate == null)
-                return BadRequest(ModelState);
-
-            var reviews = _reviewRepository.GetReviews()
-                .Where(c => c.Rating == reviewCreate.Rating)
-                .FirstOrDefault();
-
-            if (reviews != null)
+            try
             {
-                ModelState.AddModelError("", "Review already exists");
-                return StatusCode(422, ModelState);
+                if (reviewCreate == null)
+                    return BadRequest(ModelState);
 
+                var reviews = _reviewRepository.GetReviews()
+                    .Where(c => c.Rating == reviewCreate.Rating)
+                    .FirstOrDefault();
+
+                if (reviews != null)
+                {
+                    ModelState.AddModelError("", "Review already exists");
+                    return StatusCode(422, ModelState);
+
+                }
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var reviewMap = _mapper.Map<Review>(reviewCreate);
+
+                reviewMap.Recipe = _recipeRepository.GetRecipe(recipeId);
+                reviewMap.Reviewer = _reviewerRepository.GetReviewer(reviewerId);
+
+
+
+                if (!_reviewRepository.CreateReview(reviewMap))
+                {
+                    ModelState.AddModelError("", "Something went wrong while saving");
+                    return StatusCode(500, ModelState);
+                }
+
+                return Ok("Successfully created");
             }
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var reviewMap = _mapper.Map<Review>(reviewCreate);
-
-            reviewMap.Recipe = _recipeRepository.GetRecipe(recipeId);
-            reviewMap.Reviewer = _reviewerRepository.GetReviewer(reviewerId);
-
-
-
-            if (!_reviewRepository.CreateReview(reviewMap))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
+                return StatusCode(500);
             }
-
-            return Ok("Successfully created");
         }
 
 
@@ -111,26 +139,33 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateReview(int reviewId, [FromBody] ReviewDTO updatedReview)
         {
-            if (updatedReview == null)
-                return BadRequest(ModelState);
-
-            if (reviewId != updatedReview.Id)
-                return BadRequest(ModelState);
-
-            if (!_reviewerRepository.ReviewerExists(reviewId))
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
-            var reviewMap = _mapper.Map<Review>(updatedReview);
-
-            if (!_reviewRepository.UpdateReview(reviewMap))
+            try
             {
-                ModelState.AddModelError("", "Something errored updating review");
-                return StatusCode(500, ModelState);
+                if (updatedReview == null)
+                    return BadRequest(ModelState);
+
+                if (reviewId != updatedReview.Id)
+                    return BadRequest(ModelState);
+
+                if (!_reviewerRepository.ReviewerExists(reviewId))
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest();
+
+                var reviewMap = _mapper.Map<Review>(updatedReview);
+
+                if (!_reviewRepository.UpdateReview(reviewMap))
+                {
+                    ModelState.AddModelError("", "Something errored updating review");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent();
             }
-            return NoContent();
+            catch
+            {
+                return StatusCode(500);
+            }
         }
 
         [HttpDelete("{reviewId}")]
@@ -139,23 +174,29 @@ namespace cookbook3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteReview(int reviewId)
         {
-            if (!_reviewRepository.ReviewExists(reviewId))
+            try
             {
-                return NotFound();
+                if (!_reviewRepository.ReviewExists(reviewId))
+                {
+                    return NotFound();
+                }
+
+                var reviewToDelete = _reviewRepository.GetReview(reviewId);
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (!_reviewRepository.DeleteReview(reviewToDelete))
+                {
+                    ModelState.AddModelError("", "Something went wrong deleting review");
+                }
+
+                return NoContent();
             }
-
-            var reviewToDelete = _reviewRepository.GetReview(reviewId);
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (!_reviewRepository.DeleteReview(reviewToDelete))
+            catch
             {
-                ModelState.AddModelError("", "Something went wrong deleting review");
+                return StatusCode(500);
             }
-
-            return NoContent();
-
         }
     }
 }
